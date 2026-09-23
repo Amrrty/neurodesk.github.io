@@ -5,39 +5,119 @@ sidebar:
   order: 4
 ---
 
-Neurodesk offers a set of browser-native webapps for protocol comparison, QSM processing, medical image segmentation and many more tasks. They run directly in the browser, so there is no desktop installation step before you can start working.
+Neurodesk offers a set of browser-native webapps for protocol comparison, QSM processing, medical image segmentation and many more tasks. They run directly in the browser, so there is no desktop installation step before you can start working. Browse the complete list in the [Neurodesk Webapps directory](https://webapps.neurodesk.org/).
 
 :::note[Privacy and sensitive data]
 Files are processed locally in the browser and are **not** uploaded to a server or cloud service. In practice, your data stays on your machine while the app is running, which makes these tools well suited to sensitive patient data workflows.
 :::
 
+## ANTs
+
+[webapps.neurodesk.org/ants](https://webapps.neurodesk.org/ants/)
+
+ANTs aligns MRI images using affine and SyN deformable registration.
+
+## Brain extraction
+
+[webapps.neurodesk.org/brain-extraction](https://webapps.neurodesk.org/brain-extraction/)
+
+Extract brain tissue and masks using BET, MindGrab, or SynthStrip. This app is experimental.
+
+## Brain2Print
+
+[webapps.neurodesk.org/brain2print](https://webapps.neurodesk.org/brain2print/)
+
+Brain2Print creates printable brain meshes from NIfTI or DICOM scans.
+
+## BrainChop
+
+[brainchop.org](https://brainchop.org/)
+
+BrainChop segments brain images in the browser. Load a NIfTI image to view and save its segmentation.
+
+- [BrainChop test app](https://neuroneural.net/brainchop-test/)
+
+## BrowserQC
+
+[webapps.neurodesk.org/browserqc](https://webapps.neurodesk.org/browserqc/)
+
+BrowserQC segments MRI scans and calculates image quality metrics.
+
 ## CALMaR: Co-designed Automated Lesion Mapping and Reporting
 
-[calmar.neurodesk.org](https://calmar.neurodesk.org/)
+[webapps.neurodesk.org/calmar](https://webapps.neurodesk.org/calmar/)
 
 CALMaR performs brain extraction, lesion masking, MNI registration, atlas overlap, functional-connectivity mapping, and reportable tables for stroke lesions.
 
 ![CALMaR screenshot](https://github.com/user-attachments/assets/2db78ffd-187c-486f-b348-de4986e3ec71)
 
+## Deface
+
+[webapps.neurodesk.org/deface](https://webapps.neurodesk.org/deface/)
+
+Deface removes identifying facial features from MRI scans.
+
 ## dicompare
 
-[dicompare.neurodesk.org](https://dicompare.neurodesk.org)
+[webapps.neurodesk.org/dicompare](https://webapps.neurodesk.org/dicompare/)
 
 dicompare is a browser-based tool for sharing, comparing, and validating DICOM acquisition protocols. It is useful when teams want to standardise scanner protocols across sites, compare local scans against agreed standards, and generate shareable schemas and compliance reports.
 
 ![dicompare screenshot](/docs/getting-started/hosted/webapps/dicompare.png)
 
+## dwi2trx
+
+[webapps.neurodesk.org/dwi2trx](https://webapps.neurodesk.org/dwi2trx/)
+
+dwi2trx fits diffusion tensors and reconstructs streamlines using the GPU.
+
+## Easy MP2RAGE T1 Map
+
+[webapps.neurodesk.org/easy-mp2rage](https://webapps.neurodesk.org/easy-mp2rage/)
+
+Process MP2RAGE scans with T1 mapping, B1 correction, and UNI denoising.
+
+## EdgeReg
+
+[webapps.neurodesk.org/edgereg](https://webapps.neurodesk.org/edgereg/)
+
+EdgeReg aligns MRI images using affine registration with niimath.
+
+## FireANTs
+
+[webapps.neurodesk.org/fireants](https://webapps.neurodesk.org/fireants/)
+
+FireANTs registers brain images using the CPU or WebGPU.
+
+## Greedy
+
+[webapps.neurodesk.org/greedy](https://webapps.neurodesk.org/greedy/)
+
+Greedy aligns MRI images using affine and deformable registration.
+
+## MRI2VID
+
+[webapps.neurodesk.org/dicom2vid](https://webapps.neurodesk.org/dicom2vid/)
+
+MRI2VID converts DICOM, NIfTI, or MGZ volumes into scrolling videos.
+
 ## MuscleMap
 
-[musclemap.neurodesk.org](https://musclemap.neurodesk.org)
+[webapps.neurodesk.org/musclemap](https://webapps.neurodesk.org/musclemap/)
 
 MuscleMap performs browser-based muscle segmentation from MRI data. It is designed for whole-body and regional muscle analysis and provides an interactive viewer for reviewing segmentation outputs.
 
 ![MuscleMap screenshot](/docs/getting-started/hosted/webapps/musclemap.png)
 
+## NiiMath
+
+[webapps.neurodesk.org/niimath](https://webapps.neurodesk.org/niimath/)
+
+NiiMath applies mathematical operations to images and displays the results.
+
 ## QSMbly
 
-[qsmbly.neurodesk.org](https://qsmbly.neurodesk.org)
+[webapps.neurodesk.org/qsmbly](https://webapps.neurodesk.org/qsmbly/)
 
 QSMbly provides a full Quantitative Susceptibility Mapping workflow in the browser. It supports DICOM and NIfTI input data and exposes the main preparation, masking, SWI, and QSM pipeline steps through a guided interface.
 
@@ -45,7 +125,7 @@ QSMbly provides a full Quantitative Susceptibility Mapping workflow in the brows
 
 ## SeedSeg
 
-[seedseg.neurodesk.org](https://seedseg.neurodesk.org/)
+[webapps.neurodesk.org/seedseg](https://webapps.neurodesk.org/seedseg/)
 
 SeedSeg performs browser-based segmentation of intraprostatic gold fiducial markers in prostate MRI using a 3D U-Net model. It supports DICOM and NIfTI input data.
 
@@ -53,45 +133,62 @@ SeedSeg performs browser-based segmentation of intraprostatic gold fiducial mark
 
 ## Spinal Cord Toolbox
 
-[sct.neurodesk.org](https://sct.neurodesk.org)
+[webapps.neurodesk.org/sct](https://webapps.neurodesk.org/sct/)
 
 This is a browser-based implementation of the Spinal Cord Toolbox MRI segmentation workflows.
 
 ![Spinal Cord Toolbox screenshot](https://github.com/user-attachments/assets/496b35d2-fa8b-4e04-a628-21aab752b9d9)
 
+## SurfAnnotate
+
+[webapps.neurodesk.org/surfannotate](https://webapps.neurodesk.org/surfannotate/)
+
+SurfAnnotate displays cortical surfaces for manual region annotation and vertex selection.
+
+## SYNcro
+
+[webapps.neurodesk.org/syncro](https://webapps.neurodesk.org/syncro/)
+
+SYNcro normalizes brain scans and aligned lesion maps to MNI space.
+
+## SynthSeg
+
+[webapps.neurodesk.org/synthseg](https://webapps.neurodesk.org/synthseg/)
+
+SynthSeg segments brain MRI into regions labelled using FreeSurfer conventions.
+
+## SynthSR
+
+[webapps.neurodesk.org/synthsr](https://webapps.neurodesk.org/synthsr/)
+
+SynthSR synthesizes a 1 mm T1-weighted brain image.
+
+## TopoFit
+
+[webapps.neurodesk.org/topofit](https://webapps.neurodesk.org/topofit/)
+
+TopoFit reconstructs cortical white, pial, and registration surfaces from brain MRI.
+
 ## VesselBoost
 
-[vesselboost.neurodesk.org](https://vesselboost.neurodesk.org)
+[webapps.neurodesk.org/vesselboost](https://webapps.neurodesk.org/vesselboost/)
 
 VesselBoost is a browser-based blood vessel segmentation tool. It combines preprocessing and inference steps in a guided workflow so users can segment vessel structures from MRI angiography data directly on their own machine.
 
 ![VesselBoost screenshot](/docs/getting-started/hosted/webapps/vesselboost.png)
 
+## ZARRo
+
+[webapps.neurodesk.org/zarro](https://webapps.neurodesk.org/zarro/)
+
+ZARRo streams and displays multiscale OME-Zarr volumes.
+
 ## Webapps from Neurodesk friends and family
 
 These browser-based webapps are built and maintained by collaborators in the wider Neurodesk community and are not maintained by us.
 
-### 3D printing
+### qMRust
 
-- [brainchop.org](https://brainchop.org/)
+[qmrlab.org/qmrust/app](https://qmrlab.org/qmrust/app/)
 
-### Defacing
-
-- [niivue.github.io/deface](https://niivue.github.io/deface/)
-
-### MP2RAGE processing
-
-- [thomshaw92.github.io/Easy-MP2RAGE-T1-Map](https://thomshaw92.github.io/Easy-MP2RAGE-T1-Map/)
-
-### Brain segmentation
-
-- [brain2print.org](https://brain2print.org/)
-- [neuroneural.net/brainchop-test](https://neuroneural.net/brainchop-test/)
-
-### General image processing in the browser
-
-- [niivue.github.io/niivue-niimath](https://niivue.github.io/niivue-niimath/)
-
-### qMRust implements methods from qMRLab in a webapp
-
-- [qmrlab.org/qmrust/app](https://qmrlab.org/qmrust/app/)
+qMRust provides methods from qMRLab for quantitative MRI processing in the browser.

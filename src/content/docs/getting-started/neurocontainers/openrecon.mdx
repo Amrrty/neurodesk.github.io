@@ -533,6 +533,29 @@ Copy or merge the package's `Ice` folder into `MriCustomer` while preserving its
 
 FIRE installation is a scanner-administration operation. Follow your site's scanner-version-specific procedure and change-control process in addition to the generated instructions.
 
+#### Configure a protocol to use the FIRE container
+
+After installing the package, connect its ICE program to the protocol. The screenshots below show the setup for an image-to-image FIRE package.
+
+1. In the protocol editor, find **Generic Views** under **Default AddIns** and add it to the protocol you want to use with FIRE.
+
+   ![Protocol editor with Generic Views selected in the Default AddIns list](/docs/neurocontainers/fire/FIRE_0.JPG)
+
+2. Check that **Generic Views** appears on the protocol entry.
+
+   ![Protocol entry with the Generic Views add-in attached](/docs/neurocontainers/fire/FIRE_1.JPG)
+
+3. Open the protocol's properties, select **Preview**, then click **AddIn Configuration...**.
+
+   ![Protocol properties showing Preview and the AddIn Configuration button](/docs/neurocontainers/fire/FIRE_2.JPG)
+
+4. In the **myExam Add-In Configurator**, select **Queue**. Under **ICE**, select **Use Customer Path**. In the example, this points to `C:\ProgramData\Siemens\Numaris\MriCustomer\Ice`.
+5. Set **ICE program name** to the program supplied by your installed FIRE package. The screenshot shows an `openreconi2iexample` program with a name beginning `wip_070_fire_IceFireImageAddin_`. Choose the entry for your own package.
+
+   ![Queue settings with Use Customer Path selected and the FIRE ICE program chosen](/docs/neurocontainers/fire/FIRE_3.JPG)
+
+6. Close the configurator and protocol properties, then save the protocol. Test it with the installed FIRE package and check that it returns the expected image series.
+
 ## 9. Build and publish through GitHub Actions
 
 ### Commit and open the Neurocontainers pull request
@@ -611,6 +634,19 @@ If the push instead reports `Permission to neurodesk/openrecon.git denied` with 
 For a normal recipe contribution, return to your Neurocontainers checkout and follow section 9. OpenRecon package builds alone do not require a push.
 
 ### Package behaviour and metadata
+
+#### Available colour maps for LUT settings
+
+The colour maps available for LUT settings are stored on the scanner host in:
+
+```text
+C:\Program Files\Siemens\Numaris\MriProduct\config\mri\ColorLUT
+```
+
+Most systems include these palette files:
+
+- `AAAsmo.pal`
+- `Awave.pal`
 
 #### Sent image values must fit within a 4096-value range
 
@@ -734,6 +770,10 @@ OpenRecon requires container versions. For example, on the scanner, version `1.2
 OpenRecon will not install an update to a container with the same version.
 
 #### Cleaning up packages on the scanner (on XA60/61)
+
+:::danger[Protocols are deleted on scanner restart]
+If a protocol has OpenRecon selected in the **Inline** tab and the corresponding OpenRecon container has been deleted, the scanner deletes that protocol on restart.
+:::
 
 After installing and testing different OpenRecon containers, old containers remain in the host registry and consume space on the host C: drive.
 

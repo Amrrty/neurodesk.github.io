@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended",
     ":dependencyDashboard",
+    "helpers:pinGitHubActionDigests",
     ":semanticCommitsDisabled"
   ],
   "timezone": "Australia/Brisbane",
@@ -61,9 +62,9 @@
       "groupName": "github actions"
     },
     {
-      "description": "Neurodesktop images are CalVer; newer is simply newer, so there is no major or minor distinction to act on. Always offer the latest as one PR.",
+      "description": "Track stable Neurodesktop GitHub releases rather than daily container builds.",
       "matchDepNames": [
-        "ghcr.io/neurodesk/neurodesktop"
+        "neurodesk/neurodesktop"
       ],
       "groupName": "neurodesktop image in docs",
       "separateMajorMinor": false
@@ -74,20 +75,35 @@
         "tinyrange/vmsh"
       ],
       "groupName": "neurodeskappx downloads"
+    },
+    {
+      "description": "User-facing version recommendations require manual validation before merging.",
+      "matchDepNames": [
+        "neurodesk/neurodesktop",
+        "tinyrange/vmsh",
+        "mathworks/MATLAB-extension-for-vscode",
+        "vi/websocat"
+      ],
+      "addLabels": [
+        "enhancement"
+      ],
+      "prBodyNotes": [
+        "> [!WARNING]\\n> This update changes a user-facing recommendation and requires manual testing before merging."
+      ]
     }
   ],
   "customManagers": [
     {
-      "description": "Neurodesktop image tag pinned in installation instructions.",
+      "description": "Stable Neurodesktop release used across the documentation.",
       "customType": "regex",
       "managerFilePatterns": [
-        "/^src/content/docs/.*\\.mdx$/"
+        "/^src/config/neurodesktop\\.ts$/"
       ],
       "matchStrings": [
-        "VERSION=\"(?<currentValue>\\d{4}-\\d{2}-\\d{2})\""
+        "jupyterNeurodeskVersion = '(?<currentValue>\\d{4}-\\d{2}-\\d{2})'"
       ],
-      "depNameTemplate": "ghcr.io/neurodesk/neurodesktop",
-      "datasourceTemplate": "docker",
+      "depNameTemplate": "neurodesk/neurodesktop",
+      "datasourceTemplate": "github-releases",
       "versioningTemplate": "regex:^(?<major>\\d{4})-(?<minor>\\d{2})-(?<patch>\\d{2})$"
     },
     {

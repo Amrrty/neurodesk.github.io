@@ -2,35 +2,48 @@ name: Cloudflare preview links
 
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, closed]
 
-permissions:
-  checks: read
-  contents: read
-  pull-requests: write
+permissions: {}
+
+concurrency:
+  group: cloudflare-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   preview-links:
     name: Wait for Cloudflare preview
-    runs-on: ubuntu-24.04
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-26.04
     timeout-minutes: 12
+    permissions:
+      checks: read
+      contents: read
+      pull-requests: write
     steps:
       - name: Add preview links to PR description
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          CLOUDFLARE_PROJECT: neurodesk-preview
         with:
           script: |
-            const project = 'neurodesk-preview';
+            const project = process.env.CLOUDFLARE_PROJECT;
             const startMarker = '<!-- cloudflare-preview:start -->';
             const endMarker = '<!-- cloudflare-preview:end -->';
-            const pendingBlock = [
-              startMarker,
-              '> [!NOTE]',
-              '> **Preview deployment pending**',
-              '>',
-              '> This panel updates automatically when Cloudflare finishes building the preview.',
-              endMarker,
-            ].join('\n');
             const managedSection = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`);
+
+            function panel(kind, heading, lines) {
+              return [
+                startMarker,
+                `> [!${kind}]`,
+                `> **${heading}**`,
+                '>',
+                ...lines.map(line => `> ${line}`),
+                endMarker,
+              ].join('\n');
+            }
 
             function branchAlias(ref) {
               return ref
@@ -51,14 +64,9 @@ jobs:
               const branchUrl = `https://${branchAlias(pr.head.ref)}.${project}.pages.dev`;
 
               if (check.conclusion !== 'success') {
-                return [
-                  startMarker,
-                  '> [!WARNING]',
-                  '> **Preview deployment failed**',
-                  '>',
-                  `> [View deployment logs](${check.details_url})`,
-                  endMarker,
-                ].join('\n');
+                return panel('CAUTION', 'Preview deployment failed', [
+                  `[View deployment logs](${check.details_url})`,
+                ]);
               }
 
               return [
@@ -78,21 +86,15 @@ jobs:
 
             function updateManagedSection(body, block) {
               const current = body || '';
-              const replacement = block || pendingBlock;
-              if (managedSection.test(current)) {
-                return current.replace(managedSection, replacement);
-              }
-              return `${replacement}\n\n${current}`;
+              if (managedSection.test(current)) return current.replace(managedSection, block);
+              return `${block}\n\n${current}`;
             }
 
             const normalizeNewlines = value => value.replace(/\r\n/g, '\n');
 
             async function updateDescription(pr, block) {
               const body = updateManagedSection(pr.body, block);
-              if (normalizeNewlines(body) === normalizeNewlines(pr.body || '')) {
-                core.info(`PR #${pr.number} description is already current`);
-                return;
-              }
+              if (normalizeNewlines(body) === normalizeNewlines(pr.body || '')) return;
 
               await github.rest.pulls.update({
                 owner: context.repo.owner,
@@ -100,6 +102,11 @@ jobs:
                 pull_number: pr.number,
                 body,
               });
+            }
+
+            function isProjectCheck(run) {
+              return run.app?.slug === 'cloudflare-workers-and-pages' &&
+                run.details_url?.includes(`/pages/view/${project}/`);
             }
 
             async function waitForCloudflare(sha) {
@@ -112,48 +119,293 @@ jobs:
                   filter: 'latest',
                   per_page: 100,
                 });
-                const check = data.check_runs.find(
-                  run => run.app?.slug === 'cloudflare-workers-and-pages'
-                );
+                const check = data.check_runs.find(isProjectCheck);
                 if (check?.status === 'completed') return check;
 
-                core.info(`Waiting for Cloudflare Pages (${attempt}/60)`);
+                core.info(`Waiting for ${project} (${attempt}/60)`);
                 await new Promise(resolve => setTimeout(resolve, 10000));
               }
               return null;
             }
 
-            async function reconcile(prNumber) {
-              let { data: pr } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: prNumber,
-              });
+            const prNumber = context.payload.pull_request.number;
+            let { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
 
-              await updateDescription(pr, null);
+            await updateDescription(pr, panel('NOTE', 'Preview deployment pending', [
+              'This panel updates automatically when Cloudflare finishes building the preview.',
+            ]));
 
-              const check = await waitForCloudflare(pr.head.sha);
-              if (!check) {
-                core.setFailed(`Timed out waiting for Cloudflare Pages on ${pr.head.sha}`);
-                return;
-              }
-
-              const block = cloudflareBlock(pr, check);
-              if (!block) return;
-
-              ({ data: pr } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: prNumber,
-              }));
-              await updateDescription(pr, block);
-
-              if (check.conclusion !== 'success') {
-                core.setFailed(`Cloudflare Pages finished with ${check.conclusion}`);
-                return;
-              }
-
-              core.info(`Updated Cloudflare preview links on PR #${prNumber}`);
+            const check = await waitForCloudflare(pr.head.sha);
+            if (!check) {
+              await updateDescription(pr, panel('CAUTION', 'Preview deployment unavailable', [
+                `Cloudflare did not report a deployment for \`${pr.head.sha.substring(0, 7)}\` within 10 minutes.`,
+              ]));
+              core.setFailed(`Timed out waiting for ${project} on ${pr.head.sha}`);
+              return;
             }
 
-            await reconcile(context.payload.pull_request.number);
+            const block = cloudflareBlock(pr, check);
+            if (!block) return;
+
+            ({ data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            }));
+            await updateDescription(pr, block);
+
+            if (check.conclusion !== 'success') {
+              core.setFailed(`Cloudflare Pages finished with ${check.conclusion}`);
+            }
+
+  approve-fork-preview:
+    name: Approve fork preview
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      vars.FORK_PREVIEW_ENABLED == 'true'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 12
+    environment: fork-preview
+    permissions:
+      checks: read
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout trusted base revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+
+      - name: Mirror approved revision
+        env:
+          APPROVED_SHA: ${{ github.event.pull_request.head.sha }}
+          MIRROR_BRANCH: pr-${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          git fetch --no-tags origin "refs/pull/${PR_NUMBER}/head"
+          FETCHED_SHA="$(git rev-parse FETCH_HEAD)"
+
+          if [ "$FETCHED_SHA" != "$APPROVED_SHA" ]; then
+            echo "PR changed after approval: expected $APPROVED_SHA, found $FETCHED_SHA" >&2
+            exit 1
+          fi
+
+          git push --force origin \
+            "${APPROVED_SHA}:refs/heads/${MIRROR_BRANCH}"
+
+      - name: Add approved preview links
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          CLOUDFLARE_PROJECT: neurodesk-preview
+          APPROVED_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const project = process.env.CLOUDFLARE_PROJECT;
+            const approvedSha = process.env.APPROVED_SHA;
+            const prNumber = context.payload.pull_request.number;
+            const mirrorBranch = `pr-${prNumber}`;
+            const startMarker = '<!-- cloudflare-preview:start -->';
+            const endMarker = '<!-- cloudflare-preview:end -->';
+            const managedSection = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`);
+
+            function panel(kind, heading, lines) {
+              return [
+                startMarker,
+                `> [!${kind}]`,
+                `> **${heading}**`,
+                '>',
+                ...lines.map(line => `> ${line}`),
+                endMarker,
+              ].join('\n');
+            }
+
+            function updateManagedSection(body, block) {
+              const current = body || '';
+              if (managedSection.test(current)) return current.replace(managedSection, block);
+              return `${block}\n\n${current}`;
+            }
+
+            const normalizeNewlines = value => value.replace(/\r\n/g, '\n');
+
+            async function updateDescription(pr, block) {
+              const body = updateManagedSection(pr.body, block);
+              if (normalizeNewlines(body) === normalizeNewlines(pr.body || '')) return;
+
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                body,
+              });
+            }
+
+            function isProjectCheck(run) {
+              return run.app?.slug === 'cloudflare-workers-and-pages' &&
+                run.details_url?.includes(`/pages/view/${project}/`);
+            }
+
+            async function waitForCloudflare(sha) {
+              for (let attempt = 1; attempt <= 60; attempt += 1) {
+                const { data } = await github.rest.checks.listForRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: sha,
+                  check_name: 'Cloudflare Pages',
+                  filter: 'latest',
+                  per_page: 100,
+                });
+                const check = data.check_runs.find(isProjectCheck);
+                if (check?.status === 'completed') return check;
+
+                core.info(`Waiting for ${project} (${attempt}/60)`);
+                await new Promise(resolve => setTimeout(resolve, 10000));
+              }
+              return null;
+            }
+
+            let { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            if (pr.state !== 'open') {
+              core.setFailed(`PR #${prNumber} is not open`);
+              return;
+            }
+
+            if (pr.head.sha !== approvedSha) {
+              await updateDescription(pr, panel('NOTE', 'Preview approval required', [
+                `The pull request changed after \`${approvedSha.substring(0, 7)}\` was submitted for approval.`,
+                'A maintainer must approve the latest revision before Cloudflare builds it.',
+              ]));
+              core.setFailed(`PR head changed from ${approvedSha} to ${pr.head.sha}`);
+              return;
+            }
+
+            await updateDescription(pr, panel('WARNING', 'Approved preview building', [
+              `Cloudflare is building approved revision \`${approvedSha.substring(0, 7)}\`.`,
+            ]));
+
+            const check = await waitForCloudflare(approvedSha);
+            if (!check) {
+              await updateDescription(pr, panel('CAUTION', 'Preview deployment unavailable', [
+                `Cloudflare did not report a deployment for \`${approvedSha.substring(0, 7)}\` within 10 minutes.`,
+              ]));
+              core.setFailed(`Timed out waiting for ${project} on ${approvedSha}`);
+              return;
+            }
+
+            const deploymentId = check.details_url?.match(/\/([0-9a-f-]{36})$/i)?.[1];
+            if (!deploymentId) {
+              core.setFailed(`Could not extract a Cloudflare deployment ID from ${check.details_url}`);
+              return;
+            }
+
+            if (check.conclusion !== 'success') {
+              await updateDescription(pr, panel('CAUTION', 'Preview deployment failed', [
+                `[View deployment logs](${check.details_url})`,
+              ]));
+              core.setFailed(`Cloudflare Pages finished with ${check.conclusion}`);
+              return;
+            }
+
+            ({ data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            }));
+
+            const branchUrl = `https://${mirrorBranch}.${project}.pages.dev`;
+            const deploymentUrl = `https://${deploymentId.substring(0, 8)}.${project}.pages.dev`;
+            await updateDescription(pr, [
+              startMarker,
+              '> [!IMPORTANT]',
+              '> **Approved preview ready**',
+              '>',
+              `> [Open latest preview](${branchUrl}) · [Open this revision](${deploymentUrl}) · [View deployment logs](${check.details_url})`,
+              '',
+              '| | |',
+              '|---|---|',
+              `| Source revision | \`${approvedSha.substring(0, 7)}\` |`,
+              `| Mirror branch | \`${mirrorBranch}\` |`,
+              '| Status | ✅ Deploy successful |',
+              endMarker,
+            ].join('\n'));
+
+  mark-fork-preview-pending:
+    name: Request fork preview approval
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Mark preview as awaiting approval
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const startMarker = '<!-- cloudflare-preview:start -->';
+            const endMarker = '<!-- cloudflare-preview:end -->';
+            const managedSection = new RegExp(`${startMarker}[\\s\\S]*?${endMarker}`);
+            const block = [
+              startMarker,
+              '> [!NOTE]',
+              '> **Preview approval required**',
+              '>',
+              `> Revision \`${pr.head.sha.substring(0, 7)}\` is from a fork. A maintainer must approve the **fork-preview** deployment before Cloudflare builds it.`,
+              endMarker,
+            ].join('\n');
+            const current = pr.body || '';
+            const body = managedSection.test(current)
+              ? current.replace(managedSection, block)
+              : `${block}\n\n${current}`;
+
+            if (body.replace(/\r\n/g, '\n') === current.replace(/\r\n/g, '\n')) return;
+
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number,
+              body,
+            });
+
+  cleanup-fork-preview:
+    name: Remove fork preview branch
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    steps:
+      - name: Delete mirror branch
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const ref = `heads/pr-${context.payload.pull_request.number}`;
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref,
+              });
+            } catch (error) {
+              const alreadyAbsent = error.status === 404 || (
+                error.status === 422 &&
+                error.response?.data?.message === 'Reference does not exist'
+              );
+              if (!alreadyAbsent) throw error;
+              core.info(`${ref} is already absent`);
+            }

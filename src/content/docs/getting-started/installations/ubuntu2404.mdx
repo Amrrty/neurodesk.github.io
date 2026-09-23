@@ -253,7 +253,9 @@ If you need NVIDIA GPU support, activate it via exporting this environment varia
 export neurodesk_singularity_opts='--nv'
 ```
 
-If you get errors like this:
+### NVIDIA library compatibility
+
+If enabling `--nv` produces errors like this:
 
 ```text
 /opt/itksnap-4.0.2/lib/snap-4.0.2/ITK-SNAP: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.38' not found (required by /.singularity.d/libs/libGLX.so.0)
@@ -261,7 +263,7 @@ If you get errors like this:
 /opt/itksnap-4.0.2/lib/snap-4.0.2/ITK-SNAP: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.38' not found (required by /.singularity.d/libs/libGLdispatch.so.0)
 ```
 
-This means that the glibc versions inside the container and outside the container are not compatible. You can either disable the GPU flag `--nv` or use a newer version of the container.
+This means that the glibc versions inside the container and outside the container are not compatible. Use a newer container with a compatible glibc. Disabling `--nv` can prevent OpenGL GUIs from working on an NVIDIA-driven display. See [OpenGL GUIs on NVIDIA displays](/getting-started/neurocontainers/singularity/#opengl-guis-on-nvidia-displays).
 
 If you do not want to download the containers you can also stream the containers using CVMFS: [/getting-started/neurocontainers/cvmfs/](/getting-started/neurocontainers/cvmfs/).
 
@@ -285,7 +287,7 @@ singularity shell itksnap_3.8.0_20201208.simg
 itksnap
 ```
 
-If you need NVIDIA GPU support, add `--nv`:
+If you need NVIDIA GPU compute or an OpenGL GUI on an NVIDIA-driven display, add `--nv`:
 
 ```bash
 singularity shell --nv itksnap_3.8.0_20201208.simg

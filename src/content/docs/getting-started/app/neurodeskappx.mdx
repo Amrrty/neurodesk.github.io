@@ -9,7 +9,7 @@ import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
 
 NeurodeskAppX runs Neurodesktop without Docker, Podman, or administrator privileges. It is a standalone application that can run from any writable folder.
 
-It uses [vmsh and TinyRange](https://github.com/tinyrange/vmsh) internally; you do not need to install or configure them separately.
+It uses [CrumbleCracker](https://github.com/tinyrange/crumblecracker), a lightweight Linux virtual machine runtime that runs inside the application. You do not need to install a separate runtime or daemon.
 
 :::note
 If you have admin/root access and can install a container engine, use the [standard Neurodesk App](/getting-started/app/neurodeskapp/) instead.
@@ -31,14 +31,14 @@ NeurodeskAppX does not require admin access. An administrator may still need to 
 
 ## Download NeurodeskAppX
 
-Use the links below to download the latest release for your platform.
+Open the [CrumbleCracker downloads page](https://tinyrange.github.io/crumblecracker/#apps), find **NeurodeskAppX**, and select your operating system. The page tracks the latest release, so you do not need to choose a versioned filename manually.
 
 <Tabs syncKey="os">
 <TabItem label="macOS">
 
 <Steps>
 
-1. [Download NeurodeskAppX for Apple Silicon](https://github.com/tinyrange/vmsh/releases/latest/download/NeurodeskAppX_v0.8.0_darwin_arm64.zip).
+1. [Download NeurodeskAppX for Apple Silicon](https://tinyrange.github.io/crumblecracker/#apps).
 2. Double-click the ZIP file to extract `NeurodeskAppX.app`.
 3. Move the app to `~/Applications`, or leave it in another folder you can write to.
 4. Double-click `NeurodeskAppX.app` to open it.
@@ -52,7 +52,7 @@ The macOS app is signed and notarised. It requires macOS 15 or newer and does no
 
 <Steps>
 
-1. [Download NeurodeskAppX for Windows](https://github.com/tinyrange/vmsh/releases/latest/download/NeurodeskAppX_v0.8.0_windows_amd64.exe).
+1. [Download NeurodeskAppX for Windows](https://tinyrange.github.io/crumblecracker/#apps).
 2. Optionally move the `.exe` to a folder in your user profile, such as `C:\Users\<username>\Applications\NeurodeskAppX`.
 3. Double-click the `.exe` to start it.
 
@@ -65,22 +65,24 @@ NeurodeskAppX does not currently support Windows on ARM.
 
 <Steps>
 
-1. [Download NeurodeskAppX for Linux](https://github.com/tinyrange/vmsh/releases/latest/download/NeurodeskAppX_v0.8.0_linux_amd64).
+1. Open the [downloads page](https://tinyrange.github.io/crumblecracker/#apps). In the **NeurodeskAppX** card, select **Linux**, then download the x86-64 executable.
 
-2. Make the downloaded file executable, then run it:
+2. In your file manager, rename the downloaded file from `NeurodeskAppX_<version>_linux_amd64` to `neurodeskappx`. If you want to verify its checksum, do that before renaming it.
+
+3. Open a terminal in the folder containing `neurodeskappx`, then make it executable and run it:
 
    ```bash
-   chmod +x NeurodeskAppX_v0.8.0_linux_amd64
-   ./NeurodeskAppX_v0.8.0_linux_amd64
+   chmod +x neurodeskappx
+   ./neurodeskappx
    ```
 
 </Steps>
 
-To make the command available from your user profile instead:
+Alternatively, from the same folder, move the executable into `~/.local/bin` and launch it there:
 
 ```bash
 mkdir -p ~/.local/bin
-mv NeurodeskAppX_v0.8.0_linux_amd64 ~/.local/bin/neurodeskappx
+mv neurodeskappx ~/.local/bin/neurodeskappx
 chmod +x ~/.local/bin/neurodeskappx
 ~/.local/bin/neurodeskappx
 ```
@@ -88,7 +90,7 @@ chmod +x ~/.local/bin/neurodeskappx
 </TabItem>
 </Tabs>
 
-You can verify the download using the [latest checksums](https://github.com/tinyrange/vmsh/releases/latest/download/checksums.txt). See the [latest release page](https://github.com/tinyrange/vmsh/releases/latest) for release notes and all available downloads.
+You can verify the download using the [latest checksums](https://github.com/tinyrange/crumblecracker/releases/latest/download/checksums.txt). See the [latest release page](https://github.com/tinyrange/crumblecracker/releases/latest) for release notes and all available downloads.
 
 ## Start NeurodeskAppX
 
@@ -104,11 +106,33 @@ Before starting, you can change the following options:
 - **SSH access:** Adds a managed SSH entry so you can run `ssh neurodesk` while NeurodeskAppX is open.
 - **System install:** Stores application data in your user cache. Leave this off to keep the data beside the application in portable mode. Neither option requires administrator access.
 - **Shared folder:** Selects the host folder available inside Neurodesktop. The default is `~/neurodesktop-storage`, which is also used by the standard Neurodesk App.
-- **Advanced:** Lets you change the memory and vCPU allocation. NeurodeskAppX remembers these settings for later launches.
+- **Advanced:** Lets you change the memory and vCPU allocation. Builds with experimental GPU support also show the GPU option on Apple Silicon macOS. NeurodeskAppX remembers these settings for later launches.
 
 Once the required checks pass, select **Download & start**, **Start NeurodeskAppX**, or **Update & start**, depending on the displayed state. Select **Skip** to start without applying an available update.
 
 The first launch takes longer because NeurodeskAppX must download and prepare the desktop image. Later launches reuse the local image. Closing the NeurodeskAppX window shuts down the virtual machine.
+
+## GPU acceleration
+
+NeurodeskAppX has experimental OpenGL acceleration for supported graphics applications on **Apple Silicon Macs running macOS 15 or newer**. The option is not currently available in the Windows or Linux frontend. It does not provide CUDA or general-purpose GPU compute.
+
+:::note[Availability]
+Experimental GPU acceleration is available in NeurodeskAppX [v0.9.0](https://github.com/tinyrange/crumblecracker/releases/tag/v0.9.0) and newer. If **Experimental GPU acceleration** is missing from **Advanced** on a supported Mac, update NeurodeskAppX before continuing.
+:::
+
+To try it in a supporting build:
+
+<Steps>
+
+1. Open NeurodeskAppX and apply any available desktop image update. GPU support needs an image containing the graphics services as well as an updated app.
+2. Before starting the desktop, expand **Advanced** and enable **Experimental GPU acceleration**.
+3. Start NeurodeskAppX, then launch a supported graphics application from inside Neurodesktop.
+
+</Steps>
+
+Acceleration for applications running inside containers is enabled only for the application versions supported by the desktop image. Enabling the option does not accelerate every Neurodesk tool.
+
+If an application renders incorrectly, close NeurodeskAppX, reopen it, turn off **Experimental GPU acceleration**, and start the desktop again. If startup reports missing GPU services, update the desktop image before retrying.
 
 ## Start JupyterLab
 
@@ -137,7 +161,7 @@ NeurodeskAppX is designed to make large Neurodesktop downloads and updates faste
 - Disk-space checks include the image, indexes, temporary update data, and required working space.
 - NeurodeskAppX selects a responsive CVMFS mirror automatically and keeps a host-side cache of up to 5 GiB, improving subsequent tool launches.
 
-These optimisations use standard OCI images and registries. See the [latest release notes](https://github.com/tinyrange/vmsh/releases/latest) for recent changes.
+These optimisations use standard OCI images and registries. See the [latest release notes](https://github.com/tinyrange/crumblecracker/releases/latest) for recent changes.
 
 ## Data and installation modes
 

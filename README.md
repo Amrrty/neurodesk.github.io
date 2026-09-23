@@ -47,7 +47,8 @@ assembles the other sections for deployment.
 
 Create a branch, make your changes, run `pnpm build`, and open a
 [pull request](https://github.com/neurodesk/neurodesk.github.io/pulls). A
-[Cloudflare](https://pages.cloudflare.com/) preview link is added to the pull request.
+[Cloudflare](https://pages.cloudflare.com/) preview link is added automatically for internal
+branches. Fork previews are built after a maintainer approves the submitted revision.
 
 - [Contributing website content](src/content/docs/developers/documentation/creating-website-content.mdx)
 - [Local development](src/content/docs/developers/documentation/local-development.mdx)

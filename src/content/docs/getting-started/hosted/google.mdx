@@ -11,21 +11,33 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 <Tabs syncKey="google-env">
 <TabItem label="Colab">
 
-Open a notebook in Google Colab and run the following commands to set up the Neurodesk environment:
+Open a notebook in Google Colab and run this setup cell before importing analysis packages. Run it again whenever Colab assigns a new runtime.
+
+The [setup script](https://github.com/neurodesk/neurocommand/blob/main/googlecolab_setup.sh) installs the container tools, Lmod, DataLad and git-annex, mounts the Neurodesk software repository, and writes the environment settings used by the notebook. It also keeps the Python dependencies compatible with Colab.
 
 ```python
+import json
 import os
-os.environ["LD_PRELOAD"] = "";
-os.environ["APPTAINER_BINDPATH"] = "/content"
-os.environ["MPLCONFIGDIR"] = "/content/matplotlib-mpldir"
-os.environ["LMOD_CMD"] = "/usr/share/lmod/lmod/libexec/lmod"
+from pathlib import Path
+import subprocess
+import sys
 
-!curl -J -O https://raw.githubusercontent.com/neurodesk/neurocommand/main/googlecolab_setup.sh
-!chmod +x googlecolab_setup.sh
-!./googlecolab_setup.sh
-
-os.environ["MODULEPATH"] = ':'.join(map(str, list(map(lambda x: os.path.join(os.path.abspath('/cvmfs/neurodesk.ardc.edu.au/neurodesk-modules/'), x),os.listdir('/cvmfs/neurodesk.ardc.edu.au/neurodesk-modules/')))))
+setup_url = 'https://raw.githubusercontent.com/NeuroDesk/neurocommand/main/googlecolab_setup.sh'
+subprocess.run(['curl', '-fsSL', setup_url, '-o', '/content/googlecolab_setup.sh'], check=True)
+with open('/content/neurodesk-setup.log', 'w') as log:
+    result = subprocess.run(
+        ['bash', '/content/googlecolab_setup.sh'],
+        env=dict(os.environ, NEURODESK_COLAB_PYTHON=sys.executable),
+        stdout=log, stderr=subprocess.STDOUT,
+    )
+if result.returncode:
+    print(Path('/content/neurodesk-setup.log').read_text()[-6000:])
+    result.check_returncode()
+os.environ.update(json.loads(Path('/content/neurodesk-colab-env.json').read_text()))
+print('Neurodesk is ready. Full log: /content/neurodesk-setup.log')
 ```
+
+The final `os.environ.update(...)` imports the settings into the running Python kernel. Running the shell script alone cannot change the notebook's environment. If setup fails, the cell displays the end of the installation log and stops.
 
 Once this setup is completed, you can list the available Neurodesk applications like this:
 
@@ -40,6 +52,15 @@ and use applications like this:
 await lmod.load('fsl/6.0.4')
 !bet
 ```
+
+DataLad and git-annex are ready after setup; no separate installation cell is needed. Check their versions with:
+
+```python
+!datalad --version
+!git annex version
+```
+
+Use lowercase `datalad` for the command. The script installs DataLad separately from Lmod so an unavailable Ubuntu DataLad package cannot prevent Neurodesk modules from loading.
 
 This notebook demonstrates how to use all Neurodesk applications in Google Colab: [colab.research.google.com/drive/1g5cnZxj1llRaHmOs4xSglqsXnFkQYuol](https://colab.research.google.com/drive/1g5cnZxj1llRaHmOs4xSglqsXnFkQYuol?usp=sharing).
 

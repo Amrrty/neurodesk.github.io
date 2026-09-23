@@ -9,7 +9,6 @@ permissions:
 
 jobs:
   add-issue-to-project:
-    uses: neurodesk/neurodesk.github.io-astro/.github/workflows/add-issue-to-project.yml@main
+    uses: ./.github/workflows/add-issue-to-project.yml
     secrets:
       PAT: ${{ secrets.NEURODESK_GITHUB_TOKEN_ISSUE_AUTOMATION }}
-    

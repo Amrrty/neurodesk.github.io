@@ -21,13 +21,13 @@ defaults:
 
 jobs:
   generate-applist:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Restore cached applist.json
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         id: cache-applist
         with:
           path: public/data/applist.json
@@ -35,9 +35,9 @@ jobs:
           restore-keys: applist-json-
 
       - name: Set up Python 3.10
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: '3.10'
+          python-version: '3.14'
 
       - name: Install Python dependencies
         run: pip install requests
@@ -64,14 +64,14 @@ jobs:
           fi
 
       - name: Save applist.json to cache
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         if: always()
         with:
           path: public/data/applist.json
           key: applist-json-${{ github.run_id }}
 
       - name: Upload applist artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
           name: applist-json
@@ -79,17 +79,17 @@ jobs:
           retention-days: 7
 
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # --- Python data generation (must run BEFORE Astro build) ---
 
       - name: Set up Python 3.10
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: '3.10'
+          python-version: '3.14'
 
       - name: Install Python dependencies
         run: |
@@ -103,21 +103,19 @@ jobs:
         env:
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
           GA4_SERVICE_ACCOUNT_KEY: ${{ secrets.GA4_SERVICE_ACCOUNT_KEY }}
+        run: python .github/workflows/write-user-metrics.py --output public/data/user-metrics.json
+
+      - name: Verify user metrics
         run: |
-          if [ -n "$GA4_SERVICE_ACCOUNT_KEY" ]; then
-            python .github/workflows/write-user-metrics.py
-          else
-            echo "GA4_SERVICE_ACCOUNT_KEY not set — writing unavailable placeholder"
-            python .github/workflows/write-user-metrics.py --allow-missing-token
-          fi
+          python -c 'import json; data = json.load(open("public/data/user-metrics.json")); assert not data.get("unavailable") and data.get("months"), "Generated user metrics are unavailable or empty"'
 
       - name: Write Neurodesk App download metrics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python .github/workflows/write-neurodeskapp-metrics.py
+        run: python .github/workflows/write-neurodeskapp-metrics.py --output public/docs/overview/neurodeskapp_metrics.png
 
       # --- Astro build (now has all generated data in public/) ---
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         name: Install pnpm
         with:
           version: 12
@@ -197,28 +195,28 @@ jobs:
           fi
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: site-dist
           path: dist/
           retention-days: 1
 
   check-links:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs: build
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Node.js for Linkspector
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "24"
           package-manager-cache: false
 
       - name: Set up reviewdog
-        uses: reviewdog/action-setup@v1
+        uses: reviewdog/action-setup@d8a7baabd7f3e8544ee4dbde3ee41d0011c3a93f # v1
         with:
-          reviewdog_version: v0.21.0
+          reviewdog_version: v0.21.2
 
       - name: Run Linkspector with reviewdog
         env:
@@ -270,7 +268,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download build artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: site-dist
           path: dist
@@ -278,22 +276,22 @@ jobs:
       - name: Download applist artifact
         id: download-applist
         continue-on-error: true
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: applist-json
           path: dist/data
 
       - name: Restore cached applist.json (fallback)
         if: steps.download-applist.outcome == 'failure'
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: dist/data/applist.json
           key: applist-json-${{ github.run_id }}
           restore-keys: applist-json-
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v4
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=neurodesk-preview
+          command: pages deploy dist --project-name=neurodesk-preview --branch=${{ github.ref_name }}

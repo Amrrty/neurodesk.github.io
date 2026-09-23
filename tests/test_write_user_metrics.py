@@ -23,6 +23,12 @@ SPEC.loader.exec_module(write_user_metrics)
 
 
 class BuildMetricsTests(unittest.TestCase):
+    def test_default_output_targets_astro_public_directory(self) -> None:
+        with mock.patch("sys.argv", ["write-user-metrics.py"]):
+            args = write_user_metrics.parse_args()
+
+        self.assertEqual(args.output, "public/data/user-metrics.json")
+
     def test_summarize_tracking_start_uses_first_reported_date(self) -> None:
         rows = [
             {"dimensionValues": [{"value": "20260714"}]},

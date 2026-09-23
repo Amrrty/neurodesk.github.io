@@ -10,6 +10,7 @@ const links = [
 ];
 
 const current = Astro.url.pathname;
+const isHomepage = current === '/';
 ---
 
 <nav class="nav-links" aria-label="Sections">
@@ -26,7 +27,46 @@ const current = Astro.url.pathname;
 	}
 </nav>
 
-<Default {...Astro.props}><slot /></Default>
+{
+	isHomepage && (
+		<div class="home-mobile-menu">
+			<button
+				type="button"
+				class="home-mobile-menu__toggle"
+				popovertarget="home-mobile-navigation"
+				aria-label="Toggle site navigation"
+			>
+				<svg class="home-mobile-menu__open" viewBox="0 0 24 24" aria-hidden="true">
+					<path d="M4 6h16M4 12h16M4 18h16" />
+				</svg>
+				<svg class="home-mobile-menu__close" viewBox="0 0 24 24" aria-hidden="true">
+					<path d="m6 6 12 12M18 6 6 18" />
+				</svg>
+			</button>
+
+			<div id="home-mobile-navigation" class="home-mobile-menu__panel" popover>
+				<nav class="home-mobile-menu__links" aria-label="Site sections">
+					{links.map(({ label, href, external }) => (
+						<a
+							href={href}
+							aria-current={!external && current.startsWith(href) ? 'page' : undefined}
+							{...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+						>
+							{label}
+						</a>
+					))}
+				</nav>
+				<div class="home-mobile-menu__socials">
+					<Default {...Astro.props} />
+				</div>
+			</div>
+		</div>
+	)
+}
+
+<div class="default-social-icons">
+	<Default {...Astro.props}><slot /></Default>
+</div>
 
 <style>
 	.nav-links {
@@ -47,6 +87,14 @@ const current = Astro.url.pathname;
 	.nav-links a[aria-current='page'] {
 		color: var(--sl-color-white);
 	}
+	.home-mobile-menu {
+		display: none;
+	}
+	.default-social-icons {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
 
 	/* The mobile menu footer has room to wrap, so it always shows the full list. */
 	:global(.mobile-preferences) .nav-links {
@@ -58,6 +106,91 @@ const current = Astro.url.pathname;
 	@media (max-width: 55rem) {
 		:global(.header) .nav-links {
 			display: none;
+		}
+		:global(:root[data-has-hero] .header .right-group) {
+			display: flex;
+		}
+		:global(:root[data-has-hero] div.header > div:has(> site-search)) {
+			margin-inline-start: auto;
+		}
+		.home-mobile-menu {
+			display: block;
+		}
+		.home-mobile-menu ~ .default-social-icons {
+			display: none;
+		}
+		.home-mobile-menu__toggle {
+			display: grid;
+			place-items: center;
+			width: var(--sl-menu-button-size);
+			height: var(--sl-menu-button-size);
+			padding: 0;
+			border: 0;
+			border-radius: 0.25rem;
+			color: var(--sl-color-text);
+			background: transparent;
+			cursor: pointer;
+		}
+		.home-mobile-menu__toggle:hover {
+			background: var(--sl-color-gray-6);
+		}
+		.home-mobile-menu__toggle svg {
+			width: 1.5rem;
+			height: 1.5rem;
+			fill: none;
+			stroke: currentColor;
+			stroke-width: 2;
+			stroke-linecap: round;
+		}
+		.home-mobile-menu__close,
+		.home-mobile-menu__toggle:has(~ .home-mobile-menu__panel:popover-open) .home-mobile-menu__open {
+			display: none;
+		}
+		.home-mobile-menu__toggle:has(~ .home-mobile-menu__panel:popover-open) .home-mobile-menu__close {
+			display: block;
+		}
+		.home-mobile-menu__panel {
+			position: fixed;
+			inset: var(--sl-nav-height) 0 0;
+			width: 100%;
+			height: calc(100dvh - var(--sl-nav-height));
+			max-width: none;
+			max-height: none;
+			margin: 0;
+			padding: 1.5rem var(--sl-nav-pad-x);
+			border: 0;
+			border-top: 1px solid var(--sl-color-hairline-shade);
+			color: var(--sl-color-text);
+			background: var(--sl-color-bg);
+			overflow-y: auto;
+		}
+		.home-mobile-menu__links {
+			display: grid;
+			gap: 0.5rem;
+			max-width: 32rem;
+			margin-inline: auto;
+		}
+		.home-mobile-menu__links a {
+			display: block;
+			padding: 0.875rem 1rem;
+			border: 1px solid var(--sl-color-hairline);
+			border-radius: 0.25rem;
+			color: var(--sl-color-text);
+			font-weight: 600;
+			text-decoration: none;
+		}
+		.home-mobile-menu__links a:hover {
+			border-color: var(--sl-color-accent);
+			color: var(--sl-color-white);
+		}
+		.home-mobile-menu__socials {
+			display: flex;
+			justify-content: center;
+			gap: 1rem;
+			max-width: 32rem;
+			margin: 1.5rem auto 0;
+			padding-top: 1.5rem;
+			border-top: 1px solid var(--sl-color-hairline);
 		}
 	}
 </style>

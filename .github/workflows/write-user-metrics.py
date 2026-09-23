@@ -115,7 +115,7 @@ def isoformat_z(value: dt.datetime) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Write static/data/user-metrics.json from the GA4 Data API."
+        description="Write public/data/user-metrics.json from the GA4 Data API."
     )
     parser.add_argument(
         "--property-id",
@@ -124,7 +124,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output",
-        default="static/data/user-metrics.json",
+        default="public/data/user-metrics.json",
         help="Path to the generated JSON file.",
     )
     parser.add_argument(

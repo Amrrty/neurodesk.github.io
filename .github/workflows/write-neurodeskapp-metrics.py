@@ -18,7 +18,7 @@ from matplotlib.ticker import FuncFormatter, FixedLocator
 
 
 API_URL = "https://api.github.com/repos/neurodesk/neurodesk-app/releases?per_page=100"
-DEFAULT_OUTPUT = Path("static/docs/overview/neurodeskapp_metrics.png")
+DEFAULT_OUTPUT = Path("public/docs/overview/neurodeskapp_metrics.png")
 
 
 @dataclass(frozen=True)

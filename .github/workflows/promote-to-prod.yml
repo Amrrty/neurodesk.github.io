@@ -31,7 +31,7 @@ defaults:
 
 jobs:
   promote:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     outputs:
       source_sha: ${{ steps.source-revision.outputs.sha }}
     env:
@@ -40,7 +40,7 @@ jobs:
       PROD_BRANCH: site
     steps:
       - name: Checkout Astro source
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ inputs.ref }}
 
@@ -52,9 +52,9 @@ jobs:
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python 3.10
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          python-version: "3.10"
+          python-version: "3.14"
 
       - name: Install Python dependencies
         run: |
@@ -89,21 +89,19 @@ jobs:
         env:
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
           GA4_SERVICE_ACCOUNT_KEY: ${{ secrets.GA4_SERVICE_ACCOUNT_KEY }}
+        run: python .github/workflows/write-user-metrics.py --output public/data/user-metrics.json
+
+      - name: Verify user metrics
         run: |
-          if [ -n "$GA4_SERVICE_ACCOUNT_KEY" ]; then
-            python .github/workflows/write-user-metrics.py
-          else
-            echo "GA4_SERVICE_ACCOUNT_KEY not set; writing unavailable placeholder"
-            python .github/workflows/write-user-metrics.py --allow-missing-token
-          fi
+          python -c 'import json; data = json.load(open("public/data/user-metrics.json")); assert not data.get("unavailable") and data.get("months"), "Generated user metrics are unavailable or empty"'
 
       - name: Generate Neurodesk App download metrics
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python .github/workflows/write-neurodeskapp-metrics.py
+        run: python .github/workflows/write-neurodeskapp-metrics.py --output public/docs/overview/neurodeskapp_metrics.png
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
         with:
           version: 12
           cache: true
@@ -147,13 +145,13 @@ jobs:
           fi
 
       - name: Checkout Neurocontainers UI
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: neurodesk/neurocontainers-ui
           path: .production-inputs/neurocontainers-ui
 
       - name: Set up Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: latest
 
@@ -187,7 +185,7 @@ jobs:
           fi
 
       - name: Upload production candidate
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: production-site-candidate-${{ github.run_id }}
           path: dist/
@@ -241,7 +239,7 @@ jobs:
     name: Deploy candidate to neurodesk.github.io
     if: ${{ inputs.publish == false && github.event.repository.name == 'neurodesk.github.io' }}
     needs: promote
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       pages: write
@@ -251,7 +249,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Download production candidate
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: production-site-candidate-${{ github.run_id }}
           path: dist
@@ -262,7 +260,7 @@ jobs:
           touch dist/.nojekyll
 
       - name: Checkout GitHub Pages branch
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: gh-pages
           path: pages-branch
@@ -289,13 +287,13 @@ jobs:
           fi
 
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
           path: dist
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

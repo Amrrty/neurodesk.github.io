@@ -1,0 +1,109 @@
+---
+title: UCSF CoreHPC
+description: Start and reconnect to Neurodesktop on UCSF CoreHPC with connection scripts for macOS and Windows.
+sidebar:
+  order: 5
+---
+
+Use the connection scripts below to run Neurodesktop on UCSF CoreHPC and access it in your local browser. Like the [Stanford Sherlock setup](/getting-started/installations/sherlock/), this uses a Slurm job for the desktop and an SSH tunnel to connect to it.
+
+The scripts guide you through SSH configuration, resource requests, and container setup. Run them on your own computer.
+
+## Before you connect
+
+Have the following ready:
+
+- Your UCSF CoreHPC username and login or session hostname from your welcome email.
+- Access to the UCSF network, or the UCSF VPN when off campus.
+- A lab storage directory mounted on CoreHPC where you can write the Neurodesk image and shared containers.
+- On macOS, Terminal with Bash and SSH. On Windows, Git Bash with SSH.
+
+The scripts check that Slurm and Apptainer are available on the login node before submitting a job.
+
+## Download and run the script
+
+### macOS
+
+1. Download <a href="/scripts/ucsf/connectUCSFcoreHPC_mac.sh" download>connectUCSFcoreHPC_mac.sh</a> to your Downloads folder.
+2. Open Terminal.
+3. Replace `/mnt/fac/YOUR_LAB/YOUR_DIRECTORY` below with your lab storage directory, then run:
+
+```bash
+cd ~/Downloads
+export COREHPC_LAB_ROOT="/mnt/fac/YOUR_LAB/YOUR_DIRECTORY"
+bash connectUCSFcoreHPC_mac.sh
+```
+
+This version also supports Linux and WSL. It reuses one SSH connection throughout the session.
+
+### Windows
+
+1. Download <a href="/scripts/ucsf/connectUCSFcoreHPC_win.sh" download>connectUCSFcoreHPC_win.sh</a> to your Downloads folder.
+2. Open **Git Bash**.
+3. Replace `/mnt/fac/YOUR_LAB/YOUR_DIRECTORY` below with your lab storage directory, then run:
+
+```bash
+cd ~/Downloads
+export COREHPC_LAB_ROOT="/mnt/fac/YOUR_LAB/YOUR_DIRECTORY"
+bash connectUCSFcoreHPC_win.sh
+```
+
+Run these commands in Git Bash. Typing `bash` in PowerShell or Command Prompt may open WSL, which has its own SSH configuration. For WSL, use the macOS script.
+
+The Windows script opens separate SSH connections for its commands. If needed, it offers to set up SSH key login on the bastion and login node to avoid repeated password prompts. Follow the prompts to reuse an existing key or create a new one. You may need to enter your CoreHPC password several times during this first setup.
+
+:::note[Set your lab storage path]
+The scripts require you to set `COREHPC_LAB_ROOT` to the directory for your own lab before each run, as shown above. The path must already exist on CoreHPC and contain no spaces. Ask your lab administrator for the correct path if you do not know it.
+:::
+
+## Follow the connection prompts
+
+1. If the SSH entries are missing, accept the prompt to add them to `~/.ssh/config`. Enter your CoreHPC username and the login or session hostname from your welcome email. The script creates the `corehpc-bastion` and `corehpc` aliases and connects through the bastion. The bastion itself does not run Slurm jobs.
+2. Complete authentication. On Windows, follow the SSH-key setup prompts if they appear.
+3. Choose the resources for a new desktop session. Press Enter to accept a default:
+   - Partition: `cpu`. Choose `gpu` if you need a GPU.
+   - Memory: `8G`. Bare numbers are interpreted as gigabytes.
+   - CPUs: `1`.
+   - Walltime: `02:00:00`. The scripts accept up to `4-00:00:00`, or 96 hours.
+   - GPUs: `1` when you select the `gpu` partition.
+   - Slurm account: the cluster default, unless your lab provides an account name.
+4. Wait for image preparation and the job to start. If the shared Neurodesktop image is missing, the script downloads it on the login node. If a different version is present, it asks before upgrading it.
+5. Open the local URL printed after `Notebook will be available at` in your browser. It includes the port and authentication token for your session. Allow about 30 seconds for JupyterLab to start.
+6. Open Neurodesktop from the JupyterLab launcher. Keep the terminal running while you use the desktop.
+
+The scripts print the job ID, compute node, remaining walltime, and container log command. Use the URL from the current run, since the tunnel port can change when you reconnect.
+
+## Disconnect, reconnect, or stop
+
+Press **Ctrl+C** in the terminal to close the tunnel. At `Cancel the session now?`, choose:
+
+- **No**, the default, to keep the job running for a later connection.
+- **Yes** to cancel the job and release its resources.
+
+To reconnect, run the same commands for your operating system, including the lab storage setting. The script detects an existing running or queued `neurodesktop` job and offers to attach to it. Only one Neurodesktop session per user is supported by these scripts.
+
+A network interruption leaves the batch job running. Reconnecting does not extend its walltime. Save your work before the allocation expires or you cancel the job.
+
+## Storage and software
+
+The desktop home directory is stored at `~/neurodesk/home` on CoreHPC and persists between sessions. The scripts use the lab directory for these shared assets:
+
+- Neurodesktop image: `$COREHPC_LAB_ROOT/neurodesk/neurodesktop_latest.sif`.
+- Tool containers: `$COREHPC_LAB_ROOT/neurodesk/local/containers`, also available inside the desktop at `/neurodesktop-storage/containers`.
+
+The supplied scripts treat compute nodes as having no internet access. Download images and additional tool containers from the login node into lab storage before using them in the desktop.
+
+If you use FreeSurfer, place your license at `$COREHPC_LAB_ROOT/neurodesk/freesurfer_license.txt`. The scripts configure this path for the container.
+
+:::caution[Deleting files in JupyterLab]
+These scripts disable the JupyterLab trash. Files deleted through JupyterLab are deleted permanently.
+:::
+
+## Troubleshoot a connection
+
+- **SSH authentication fails:** check your UCSF network or VPN connection, credentials, and login hostname. Test `ssh corehpc` from the same terminal you use for the script.
+- **Repeated Windows password prompts:** rerun the Windows script and complete SSH-key setup for both the bastion and login node.
+- **Lab storage is not visible:** check `COREHPC_LAB_ROOT` and confirm that the directory is mounted for your account.
+- **The job stays queued:** read the queue reason printed by the script. If the script stops waiting, the job stays queued. Run the script again to attach.
+- **The browser cannot connect:** allow time for startup and use the URL printed by the current run. If the tunnel reports a port conflict, close an old tunnel and rerun the script.
+- **The desktop stops:** inspect the job log using the command printed by the script. After a tunnel failure, the scripts also report Slurm state and recent log output when the connection is available.

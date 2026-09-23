@@ -39,6 +39,30 @@ cd gpu_test/etest/
 bash runme_gpu.sh
 ```
 
+### OpenGL GUIs on NVIDIA displays
+
+When NVIDIA drives your X display, container OpenGL GUIs need `--nv`, even without CUDA use. Images include Mesa's GLX library, but the NVIDIA X server requires `libGLX_nvidia.so.0`. Without it, GUIs fail. Look for GLX or `libGLX_nvidia.so.0` in diagnostic output.
+
+The `--nv` option supplies the host's NVIDIA libraries. For a downloaded image, run:
+
+```shell
+apptainer exec --nv "$container.simg" itksnap
+```
+
+For Singularity, replace `apptainer` with `singularity`. For Neurocommand wrappers, set this in the terminal you use to launch applications:
+
+```shell
+export neurodesk_singularity_opts="${neurodesk_singularity_opts:+$neurodesk_singularity_opts }--nv"
+```
+
+For Apptainer, including CVMFS module wrappers, alternatively use:
+
+```shell
+export APPTAINER_NV=1
+```
+
+If this causes a `GLIBC_2.38` error, see the [Ubuntu compatibility guidance](/getting-started/installations/ubuntu2404/#nvidia-library-compatibility). Details are in [neurocommand issue #810](https://github.com/neurodesk/neurocommand/issues/810).
+
 ## Transparent Singularity
 
 The Singularity containers can also be used in combination with our [Transparent Singularity Tool](/developers/architecture/transparent-singularity), which wraps the executables inside a container so they are easily available to pipelines.

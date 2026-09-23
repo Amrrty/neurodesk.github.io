@@ -1964,23 +1964,6 @@ a.add-tool-button:hover {
 .sidebar-content ul:has(> li > details) > li > a[aria-current='page'] {
 	color: var(--sl-color-text-invert);
 }
-/* Splash pages opt into hasSidebar so the mobile hamburger renders; these put
-   back the measurements and layout that [data-has-sidebar] would override. */
-:root[data-has-hero] {
-	--sl-content-width: 67.5rem;
-	--sl-content-inline-start: 0rem;
-}
-
-/* Above the mobile band below, hero pages drop the sidebar column entirely. */
-@media (min-width: 55rem) {
-	:root[data-has-hero] .sidebar-pane {
-		--sl-sidebar-visibility: hidden;
-	}
-	:root[data-has-hero] .main-frame {
-		padding-inline-start: 0;
-	}
-}
-
 /* -------------------------------------------------------------------------
    Move the desktop/mobile switch to 55rem.
 
@@ -2021,7 +2004,7 @@ a.add-tool-button:hover {
 	}
 
 	/* Starlight hides the toggle from 50rem up; this band still needs it. */
-	starlight-menu-button button {
+	.sl-menu-button {
 		display: flex;
 	}
 
@@ -2035,17 +2018,15 @@ a.add-tool-button:hover {
 
 	/* Back to a full-width overlay drawer rather than a docked column. */
 	.sidebar-pane {
-		--sl-sidebar-visibility: hidden;
+		display: none;
 		width: 100%;
 		background-color: var(--sl-color-black);
 		border-inline-end: 0;
 	}
 
-	/* custom.css is unlayered, so the rule above outranks Starlight's own
-	   visibility rule in starlight.core and it has to be restated here. This is
-	   what actually makes the hamburger open anything in this band. */
-	[aria-expanded='true'] ~ .sidebar-pane {
-		--sl-sidebar-visibility: visible;
+	/* Starlight 0.42 uses the Popover API for the mobile sidebar. */
+	.sidebar-pane:popover-open {
+		display: block;
 	}
 
 	/* No docked column, so no reserved content gutter. */

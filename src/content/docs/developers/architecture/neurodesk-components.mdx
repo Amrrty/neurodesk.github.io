@@ -42,7 +42,7 @@ More info: [transparent-singularity](/developers/architecture/transparent-singul
 
 ## NeurodeskAppX
 
-[NeurodeskAppX](/getting-started/app/neurodeskappx/) provides a portable Neurodesktop experience for users without privileged system access (root/admin permissions). It is powered by [vmsh and TinyRange](https://github.com/tinyrange/vmsh), which provide a lightweight virtual machine and container runtime without requiring Docker or Podman.
+[NeurodeskAppX](/getting-started/app/neurodeskappx/) provides a portable Neurodesktop experience for users without privileged system access (root/admin permissions). It is powered by [CrumbleCracker](https://github.com/tinyrange/crumblecracker), an independent Linux virtual machine runtime that runs in the application process without requiring Docker, Podman, or a separate daemon.
 
 NeurodeskAppX provides:
 
@@ -51,6 +51,7 @@ NeurodeskAppX provides:
 - User-space networking and virtual machine management
 - Portable storage or installation within the user's profile
 - Support for Apple Silicon macOS, x86-64 Windows, and x86-64 Linux
+- [Experimental OpenGL acceleration on Apple Silicon](/getting-started/app/neurodeskappx/#gpu-acceleration) in supporting builds
 
 This solution is particularly valuable in environments where users don't have administrative privileges, such as shared computing facilities or institutional workstations.
 
